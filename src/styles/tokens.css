@@ -1,0 +1,99 @@
+/*
+  Design tokens — Islamic Studies Curriculum
+  Direction: "rare-books reading room" — deep ink ground, one restrained
+  brass/gold-leaf accent, manuscript-grade Arabic typesetting (Amiri),
+  literary serif for Latin reading text (Newsreader), Inter for UI chrome.
+*/
+
+:root {
+  /* ---- Color: ink & brass ---- */
+  --color-ink: #14181c;          /* page background */
+  --color-surface: #1c2227;      /* cards, panels */
+  --color-raised: #2a3138;       /* hover states, nested panels */
+  --color-border: #333c44;       /* hairline borders */
+  --color-muted: #8fa3b0;        /* secondary text, rules, icons */
+  --color-text: #edeff1;         /* primary text */
+  --color-text-soft: #c7cfd4;    /* body copy, slightly softer than headings */
+  --color-accent: #c4a05a;       /* brass / gold-leaf — used sparingly */
+  --color-accent-soft: #c4a05a26; /* accent at low opacity, for backgrounds */
+  --color-danger: #c17862;
+
+  /* Level badges — desaturated, legible against dark ground */
+  --level-beginner: #7fae8c;
+  --level-intermediate: #c4a05a;
+  --level-advanced: #b06b6b;
+
+  /* ---- Type ---- */
+  --font-arabic: "Amiri", "Traditional Arabic", serif;
+  --font-display: "Newsreader", Georgia, serif;
+  --font-body: "Newsreader", Georgia, serif;
+  --font-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+  --text-4xl: 3rem;
+
+  /* ---- Spacing (8px base) ---- */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+
+  /* ---- Layout ---- */
+  --content-width: 42rem;
+  --sidebar-width: 17rem;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 14px;
+
+  /* ---- Motion ---- */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+}
+
+/* Light mode override (system preference or manual toggle via [data-theme="light"]) */
+:root[data-theme="light"] {
+  --color-ink: #faf9f6;
+  --color-surface: #ffffff;
+  --color-raised: #f1efe9;
+  --color-border: #e2ded3;
+  --color-muted: #6b7480;
+  --color-text: #1c2227;
+  --color-text-soft: #3a4149;
+  --color-accent: #a9823f;
+  --color-accent-soft: #a9823f1f;
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --color-ink: #faf9f6;
+    --color-surface: #ffffff;
+    --color-raised: #f1efe9;
+    --color-border: #e2ded3;
+    --color-muted: #6b7480;
+    --color-text: #1c2227;
+    --color-text-soft: #3a4149;
+    --color-accent: #a9823f;
+    --color-accent-soft: #a9823f1f;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

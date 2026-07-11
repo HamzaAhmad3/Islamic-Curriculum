@@ -1,0 +1,147 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ScienceCard from "@/components/ScienceCard.astro";
+import { getSciencesSorted, getBookCountByScience } from "@/lib/content";
+
+const sciences = await getSciencesSorted();
+const counts = await getBookCountByScience();
+const base = import.meta.env.BASE_URL;
+
+const totalBooks = [...counts.values()].reduce((sum, n) => sum + n, 0);
+---
+<BaseLayout title="Home">
+  <section class="hero">
+    <div class="hero__inner">
+      <p class="eyebrow hero__eyebrow">A living curriculum, mapped</p>
+      <h1 class="hero__title">
+        Every text has a teacher.<br />
+        Every teacher, a chain.
+      </h1>
+      <p class="hero__lede">
+        This is a map of the traditional Islamic sciences — the primers, the commentaries
+        written to unpack them, and the order in which students have long moved between
+        them. {sciences.length} sciences, {totalBooks} texts catalogued so far, growing by
+        the week.
+      </p>
+      <div class="hero__actions">
+        <a href={`${base}sciences`} class="btn btn--primary">Browse the sciences</a>
+        <a href={`${base}dashboard`} class="btn btn--ghost">See what's being studied now</a>
+      </div>
+    </div>
+
+    <div class="hero__isnad" aria-hidden="true">
+      <svg viewBox="0 0 200 260" width="180" height="234" fill="none">
+        <circle cx="30" cy="20" r="5" fill="var(--color-accent)"/>
+        <line x1="30" y1="25" x2="30" y2="80" stroke="var(--color-border)" stroke-width="1"/>
+        <circle cx="30" cy="85" r="4" fill="var(--color-muted)"/>
+        <line x1="30" y1="85" x2="100" y2="120" stroke="var(--color-border)" stroke-width="1"/>
+        <line x1="30" y1="90" x2="30" y2="150" stroke="var(--color-border)" stroke-width="1"/>
+        <circle cx="100" cy="120" r="4" fill="var(--color-muted)"/>
+        <circle cx="30" cy="155" r="4" fill="var(--color-muted)"/>
+        <line x1="100" y1="124" x2="100" y2="185" stroke="var(--color-border)" stroke-width="1"/>
+        <line x1="30" y1="159" x2="30" y2="215" stroke="var(--color-border)" stroke-width="1"/>
+        <circle cx="100" cy="190" r="4" fill="var(--color-muted)"/>
+        <circle cx="30" cy="220" r="4" fill="var(--color-muted)"/>
+      </svg>
+    </div>
+  </section>
+
+  <section class="sciences-grid-section">
+    <div class="section-inner">
+      <div class="section-heading">
+        <h2>The sciences</h2>
+        <p>Each is its own portal — a roadmap, a shelf of texts, and the commentaries written around them.</p>
+      </div>
+
+      <div class="sciences-grid">
+        {sciences.map((science) => (
+          <ScienceCard
+            title={science.data.title}
+            titleAr={science.data.titleAr}
+            description={science.data.shortDescription}
+            href={`${base}sciences/${science.slug}`}
+            status={science.data.status}
+            bookCount={counts.get(science.slug) ?? 0}
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <style>
+    .hero {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: var(--space-24) var(--space-6) var(--space-16);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--space-16);
+      align-items: center;
+    }
+    .hero__inner { max-width: 34rem; }
+    .hero__eyebrow { color: var(--color-accent); margin-bottom: var(--space-4); }
+    .hero__title {
+      font-size: var(--text-4xl);
+      font-weight: 400;
+      margin-bottom: var(--space-6);
+    }
+    .hero__lede {
+      font-size: var(--text-lg);
+      color: var(--color-text-soft);
+      margin-bottom: var(--space-8);
+    }
+    .hero__actions {
+      display: flex;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+    .hero__isnad {
+      opacity: 0.9;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      padding: var(--space-3) var(--space-6);
+      border-radius: var(--radius-md);
+      font-family: var(--font-ui);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      transition: all var(--duration-fast) var(--ease-standard);
+    }
+    .btn--primary {
+      background: var(--color-accent);
+      color: var(--color-ink);
+    }
+    .btn--primary:hover { filter: brightness(1.1); }
+    .btn--ghost {
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+    }
+    .btn--ghost:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+    .sciences-grid-section {
+      border-top: 1px solid var(--color-border);
+      padding: var(--space-16) 0;
+    }
+    .section-inner {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: 0 var(--space-6);
+    }
+    .section-heading { max-width: 32rem; margin-bottom: var(--space-8); }
+    .section-heading h2 { margin-bottom: var(--space-2); }
+    .section-heading p { color: var(--color-muted); font-size: var(--text-sm); margin: 0; }
+
+    .sciences-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--space-5);
+    }
+
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; padding-top: var(--space-16); }
+      .hero__isnad { display: none; }
+    }
+  </style>
+</BaseLayout>

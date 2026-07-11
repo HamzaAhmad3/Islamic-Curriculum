@@ -1,0 +1,79 @@
+---
+import { getCollection, getEntry } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+const guides = await getCollection("guides");
+const base = import.meta.env.BASE_URL;
+
+const withScience = await Promise.all(
+  guides.map(async (g) => ({ guide: g, science: g.data.relatedScience ? await getEntry(g.data.relatedScience) : null }))
+);
+---
+<BaseLayout title="Guides" description="Methodology essays on how to study — not what to study.">
+  <div class="page-header">
+    <p class="eyebrow">Method, not just content</p>
+    <h1>Guides</h1>
+    <p class="page-header__lede">
+      Long-form notes on how to actually study a text — review habits, note-taking, how to prepare
+      for class — distinct from the catalog of texts itself.
+    </p>
+  </div>
+
+  <div class="section-inner">
+    {withScience.length === 0 ? (
+      <p class="empty-state">No guides published yet.</p>
+    ) : (
+      <ul class="guide-list">
+        {withScience.map(({ guide, science }) => (
+          <li>
+            <a href={`${base}guides/${guide.slug}`} class="guide-card">
+              {science && <span class="guide-card__science ui-text">{science.data.title}</span>}
+              <h2 class="guide-card__title">{guide.data.title}</h2>
+              {guide.data.summary && <p class="guide-card__summary">{guide.data.summary}</p>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+
+  <style>
+    .page-header {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: var(--space-16) var(--space-6) var(--space-10);
+    }
+    .page-header h1 { margin: var(--space-3) 0 var(--space-3); }
+    .page-header__lede { color: var(--color-text-soft); max-width: 34rem; margin: 0; }
+
+    .section-inner { max-width: 60rem; margin: 0 auto; padding: 0 var(--space-6) var(--space-16); }
+
+    .empty-state {
+      color: var(--color-muted);
+      font-style: italic;
+      padding: var(--space-8);
+      border: 1px dashed var(--color-border);
+      border-radius: var(--radius-md);
+      text-align: center;
+    }
+
+    .guide-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+    .guide-card {
+      display: block;
+      padding: var(--space-6);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      transition: border-color var(--duration-fast) var(--ease-standard);
+    }
+    .guide-card:hover { border-color: var(--color-accent); }
+    .guide-card__science {
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-accent);
+    }
+    .guide-card__title { font-size: var(--text-xl); margin: var(--space-2) 0; }
+    .guide-card__summary { color: var(--color-text-soft); margin: 0; }
+  </style>
+</BaseLayout>

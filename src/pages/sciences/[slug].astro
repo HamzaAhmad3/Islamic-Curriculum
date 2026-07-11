@@ -1,0 +1,186 @@
+---
+import { getCollection, getEntry, render } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import BookCard from "@/components/BookCard.astro";
+import IsnadChain from "@/components/IsnadChain.astro";
+import { getBooksForScience, getPathwaysForScience, resolvePathwayNodes, levelLabel } from "@/lib/content";
+
+export async function getStaticPaths() {
+  const sciences = await getCollection("sciences");
+  return sciences.map((science) => ({
+    params: { slug: science.slug },
+    props: { science },
+  }));
+}
+
+const { science } = Astro.props;
+const { Content } = await render(science);
+const base = import.meta.env.BASE_URL;
+
+const books = await getBooksForScience(science.slug);
+const matns = books.filter((b) => b.data.type === "matn" || b.data.type === "reference-work");
+const pathways = await getPathwaysForScience(science.slug);
+
+const relatedSciences = await Promise.all(
+  (science.data.relatedSciences ?? []).map((ref) => getEntry(ref))
+);
+
+const statusCopy: Record<string, string> = {
+  developed: "This section is well developed, with multiple pathways and commentaries mapped.",
+  developing: "This section is actively growing — more texts and commentaries are being added.",
+  stub: "This section is just beginning. Only a handful of texts are catalogued so far.",
+};
+---
+<BaseLayout title={science.data.title} description={science.data.shortDescription}>
+  <div class="breadcrumbs ui-text">
+    <a href={`${base}sciences`}>Sciences</a>
+    <span aria-hidden="true">/</span>
+    <span>{science.data.title}</span>
+  </div>
+
+  <header class="science-header">
+    <p class="eyebrow" data-status={science.data.status}>{statusCopy[science.data.status]}</p>
+    <h1>{science.data.title}</h1>
+    {science.data.titleAr && <p class="science-header__ar" lang="ar">{science.data.titleAr}</p>}
+    <div class="science-header__content">
+      <Content />
+    </div>
+  </header>
+
+  {pathways.length > 0 && (
+    <section class="section">
+      <div class="section-inner">
+        <h2>Roadmap</h2>
+        {pathways.map(async (pathway) => {
+          const nodes = await resolvePathwayNodes(pathway);
+          return (
+            <div class="pathway-block">
+              <h3 class="pathway-block__title">{pathway.data.title}</h3>
+              {pathway.data.description && <p class="pathway-block__desc">{pathway.data.description}</p>}
+              <IsnadChain
+                nodes={nodes.map((n) => ({
+                  label: n.data.title,
+                  labelAr: n.data.titleAr,
+                  href: `${base}books/${n.slug}`,
+                  meta: n.data.level ? levelLabel[n.data.level] : undefined,
+                }))}
+              />
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  )}
+
+  <section class="section">
+    <div class="section-inner">
+      <h2>Texts</h2>
+      {matns.length === 0 ? (
+        <p class="empty-state">No texts catalogued yet for this science — check back soon.</p>
+      ) : (
+        <div class="book-grid">
+          {matns.map((book) => (
+            <BookCard
+              title={book.data.title}
+              titleAr={book.data.titleAr}
+              author={book.data.author}
+              level={book.data.level}
+              type={book.data.type}
+              hasPdf={Boolean(book.data.pdfUrl)}
+              href={`${base}books/${book.slug}`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  </section>
+
+  {relatedSciences.length > 0 && (
+    <section class="section section--muted">
+      <div class="section-inner">
+        <h2>Related sciences</h2>
+        <div class="related-list">
+          {relatedSciences.filter(Boolean).map((rel) => (
+            <a href={`${base}sciences/${rel!.slug}`} class="related-pill ui-text">{rel!.data.title}</a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <style>
+    .breadcrumbs {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: var(--space-6) var(--space-6) 0;
+      display: flex;
+      gap: var(--space-2);
+      font-size: var(--text-xs);
+      color: var(--color-muted);
+    }
+    .breadcrumbs a { color: var(--color-muted); }
+    .breadcrumbs a:hover { color: var(--color-accent); }
+
+    .science-header {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: var(--space-6) var(--space-6) var(--space-8);
+    }
+    .science-header .eyebrow { color: var(--color-muted); margin-bottom: var(--space-3); }
+    .science-header .eyebrow[data-status="developed"] { color: var(--level-beginner); }
+    .science-header .eyebrow[data-status="developing"] { color: var(--color-accent); }
+    .science-header h1 { margin-bottom: var(--space-2); }
+    .science-header__ar {
+      font-size: var(--text-xl);
+      color: var(--color-muted);
+      margin-bottom: var(--space-6);
+    }
+    .science-header__content {
+      max-width: 42rem;
+      font-size: var(--text-lg);
+    }
+
+    .section { border-top: 1px solid var(--color-border); padding: var(--space-12) 0; }
+    .section--muted { background: var(--color-surface); }
+    .section-inner { max-width: 78rem; margin: 0 auto; padding: 0 var(--space-6); }
+    .section h2 { margin-bottom: var(--space-6); }
+
+    .pathway-block { margin-bottom: var(--space-12); max-width: 36rem; }
+    .pathway-block:last-child { margin-bottom: 0; }
+    .pathway-block__title { font-size: var(--text-lg); margin-bottom: var(--space-1); }
+    .pathway-block__desc { font-size: var(--text-sm); color: var(--color-muted); margin-bottom: var(--space-6); }
+
+    .book-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .empty-state {
+      color: var(--color-muted);
+      font-style: italic;
+      padding: var(--space-8);
+      border: 1px dashed var(--color-border);
+      border-radius: var(--radius-md);
+      text-align: center;
+    }
+
+    .related-list { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+    .related-pill {
+      padding: var(--space-2) var(--space-4);
+      border: 1px solid var(--color-border);
+      border-radius: 20px;
+      font-size: var(--text-sm);
+      transition: border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+    }
+    .related-pill:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+    @media (max-width: 560px) {
+      .science-header { padding-top: var(--space-4); }
+      .science-header h1 { font-size: var(--text-3xl); }
+      .science-header__ar { font-size: var(--text-lg); }
+      .science-header__content { font-size: var(--text-base); }
+      .book-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</BaseLayout>

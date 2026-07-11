@@ -1,0 +1,248 @@
+---
+import { getCollection, getEntry } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+const entries = await getCollection("dashboard");
+const base = import.meta.env.BASE_URL;
+
+async function resolveEntry(e: (typeof entries)[number]) {
+  const book = e.data.book ? await getEntry(e.data.book) : null;
+  return { ...e, resolvedBook: book };
+}
+
+const resolved = await Promise.all(entries.map(resolveEntry));
+
+const grouped = {
+  studying: resolved.filter((e) => e.data.status === "studying" && !e.data.dateNote),
+  recordings: resolved.filter((e) => e.data.status === "studying" && e.data.dateNote),
+  reading: resolved.filter((e) => e.data.status === "reading"),
+  memorizing: resolved.filter((e) => e.data.status === "memorizing"),
+  toBuy: resolved.filter((e) => e.data.status === "to-buy"),
+};
+
+function displayTitle(e: (typeof resolved)[number]) {
+  return e.resolvedBook?.data.title ?? e.data.label ?? "Untitled";
+}
+function displayHref(e: (typeof resolved)[number]) {
+  return e.resolvedBook ? `${base}books/${e.resolvedBook.slug}` : null;
+}
+---
+<BaseLayout title="Dashboard" description="What's currently being studied, read, and memorized — a personal, evolving snapshot.">
+  <div class="page-header">
+    <p class="eyebrow">Personal, updated most days</p>
+    <h1>Dashboard</h1>
+    <p class="page-header__lede">
+      A snapshot of what's currently in progress — not part of the catalog itself, just where the
+      curator's own study happens to be right now.
+    </p>
+  </div>
+
+  <div class="dashboard-grid">
+    <section class="dash-panel">
+      <h2 class="dash-panel__title ui-text">
+        <span class="dash-dot" data-status="studying"></span>
+        Currently studying
+      </h2>
+      {grouped.studying.length === 0 ? (
+        <p class="empty">Nothing logged yet.</p>
+      ) : (
+        <ul class="dash-list">
+          {grouped.studying.map((e) => (
+            <li class="dash-item">
+              {displayHref(e) ? (
+                <a href={displayHref(e)!} class="dash-item__title">{displayTitle(e)}</a>
+              ) : (
+                <span class="dash-item__title">{displayTitle(e)}</span>
+              )}
+              <div class="dash-item__meta ui-text">
+                {e.data.teacher && <span>{e.data.teacher}</span>}
+                {e.data.progress && <span>{e.data.progress}</span>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+
+    <section class="dash-panel">
+      <h2 class="dash-panel__title ui-text">
+        <span class="dash-dot" data-status="reading"></span>
+        Reading
+      </h2>
+      {grouped.reading.length === 0 ? (
+        <p class="empty">Nothing logged yet.</p>
+      ) : (
+        <ul class="dash-list">
+          {grouped.reading.map((e) => (
+            <li class="dash-item">
+              {displayHref(e) ? (
+                <a href={displayHref(e)!} class="dash-item__title">{displayTitle(e)}</a>
+              ) : (
+                <span class="dash-item__title">{displayTitle(e)}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+
+    <section class="dash-panel">
+      <h2 class="dash-panel__title ui-text">
+        <span class="dash-dot" data-status="memorizing"></span>
+        Memorizing
+      </h2>
+      {grouped.memorizing.length === 0 ? (
+        <p class="empty">Nothing logged yet.</p>
+      ) : (
+        <ul class="dash-list">
+          {grouped.memorizing.map((e) => (
+            <li class="dash-item">
+              <span class="dash-item__title">{displayTitle(e)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+
+    <section class="dash-panel">
+      <h2 class="dash-panel__title ui-text">
+        <span class="dash-dot" data-status="recordings"></span>
+        Class recordings in progress
+      </h2>
+      {grouped.recordings.length === 0 ? (
+        <p class="empty">Nothing logged yet.</p>
+      ) : (
+        <ul class="dash-list">
+          {grouped.recordings.map((e) => (
+            <li class="dash-item">
+              {displayHref(e) ? (
+                <a href={displayHref(e)!} class="dash-item__title">{e.data.label ?? displayTitle(e)}</a>
+              ) : (
+                <span class="dash-item__title">{e.data.label ?? displayTitle(e)}</span>
+              )}
+              <div class="dash-item__meta ui-text">
+                {e.data.dateNote && <span>{e.data.dateNote}</span>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  </div>
+
+  <section class="section">
+    <div class="section-inner">
+      <h2>To buy</h2>
+      <ul class="buy-list">
+        {grouped.toBuy.map((e) => (
+          <li class="buy-item">
+            {displayHref(e) ? (
+              <a href={displayHref(e)!}>{displayTitle(e)}</a>
+            ) : (
+              <span>{displayTitle(e)}</span>
+            )}
+            {e.data.rare && <span class="buy-item__rare ui-text">Rare</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <style>
+    .page-header {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: var(--space-16) var(--space-6) var(--space-10);
+    }
+    .page-header h1 { margin: var(--space-3) 0 var(--space-3); }
+    .page-header__lede { color: var(--color-text-soft); max-width: 34rem; margin: 0; }
+
+    .dashboard-grid {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: 0 var(--space-6) var(--space-16);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--space-5);
+    }
+
+    .dash-panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+    }
+    .dash-panel__title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--color-muted);
+      margin: 0 0 var(--space-5);
+    }
+    .dash-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--color-accent);
+    }
+
+    .dash-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+    .dash-item__title {
+      font-family: var(--font-display);
+      font-size: var(--text-base);
+      color: var(--color-text);
+    }
+    a.dash-item__title:hover { color: var(--color-accent); }
+    .dash-item__meta {
+      display: flex;
+      gap: var(--space-3);
+      font-size: var(--text-xs);
+      color: var(--color-muted);
+      margin-top: 2px;
+    }
+
+    .empty { color: var(--color-muted); font-size: var(--text-sm); font-style: italic; margin: 0; }
+
+    .section { border-top: 1px solid var(--color-border); padding: var(--space-12) 0 var(--space-16); }
+    .section-inner { max-width: 78rem; margin: 0 auto; padding: 0 var(--space-6); }
+    .section h2 { margin-bottom: var(--space-6); }
+
+    .buy-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--space-3);
+    }
+    .buy-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+    }
+    .buy-item a:hover { color: var(--color-accent); }
+    .buy-item__rare {
+      flex-shrink: 0;
+      font-size: var(--text-xs);
+      color: var(--color-danger);
+      border: 1px solid var(--color-danger);
+      border-radius: 20px;
+      padding: 1px 8px;
+    }
+
+    @media (max-width: 560px) {
+      .page-header { padding-top: var(--space-8); }
+      .page-header h1 { font-size: var(--text-3xl); }
+      .buy-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</BaseLayout>

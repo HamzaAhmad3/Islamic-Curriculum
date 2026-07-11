@@ -1,0 +1,103 @@
+---
+interface Props {
+  title: string;
+  titleAr?: string;
+  description: string;
+  href: string;
+  status?: "developed" | "developing" | "stub";
+  bookCount?: number;
+}
+
+const { title, titleAr, description, href, status = "developing", bookCount } = Astro.props;
+
+const statusLabel: Record<string, string> = {
+  developed: "Developed",
+  developing: "Developing",
+  stub: "Early stage",
+};
+---
+<a href={href} class="science-card">
+  <div class="science-card__top">
+    <span class="eyebrow science-card__status" data-status={status}>{statusLabel[status]}</span>
+    {typeof bookCount === "number" && (
+      <span class="science-card__count ui-text">{bookCount} {bookCount === 1 ? "text" : "texts"}</span>
+    )}
+  </div>
+
+  <h3 class="science-card__title">{title}</h3>
+  {titleAr && <p class="science-card__title-ar" lang="ar">{titleAr}</p>}
+  <p class="science-card__desc">{description}</p>
+
+  <span class="science-card__cta ui-text">
+    Explore
+    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" aria-hidden="true">
+      <path d="M3 8h10M8.5 3.5 13 8l-4.5 4.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </span>
+</a>
+
+<style>
+  .science-card {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-6);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    transition: border-color var(--duration-base) var(--ease-standard),
+                transform var(--duration-base) var(--ease-standard),
+                background var(--duration-base) var(--ease-standard);
+    height: 100%;
+  }
+  .science-card:hover {
+    border-color: var(--color-accent);
+    background: var(--color-raised);
+    transform: translateY(-2px);
+  }
+
+  .science-card__top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+  }
+  .science-card__status[data-status="developed"] { color: var(--level-beginner); }
+  .science-card__status[data-status="developing"] { color: var(--color-accent); }
+  .science-card__status[data-status="stub"] { color: var(--color-muted); }
+  .science-card__count {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+  }
+
+  .science-card__title {
+    margin-bottom: var(--space-1);
+    font-size: var(--text-xl);
+  }
+  .science-card__title-ar {
+    font-size: var(--text-lg);
+    color: var(--color-muted);
+    margin: 0 0 var(--space-3);
+  }
+  .science-card__desc {
+    font-size: var(--text-sm);
+    color: var(--color-text-soft);
+    margin: 0 0 var(--space-4);
+    flex-grow: 1;
+  }
+
+  .science-card__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-accent);
+    margin-top: auto;
+  }
+  .science-card__cta svg {
+    transition: transform var(--duration-fast) var(--ease-standard);
+  }
+  .science-card:hover .science-card__cta svg {
+    transform: translateX(3px);
+  }
+</style>

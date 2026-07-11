@@ -1,0 +1,52 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import ScienceCard from "@/components/ScienceCard.astro";
+import { getSciencesSorted, getBookCountByScience } from "@/lib/content";
+
+const sciences = await getSciencesSorted();
+const counts = await getBookCountByScience();
+const base = import.meta.env.BASE_URL;
+---
+<BaseLayout title="Sciences" description="Every science in the curriculum, from Fiqh to Tajwid.">
+  <div class="page-header">
+    <p class="eyebrow">Curriculum</p>
+    <h1>The Sciences</h1>
+    <p class="page-header__lede">Eleven disciplines, each at its own stage of development — some fully mapped, others just beginning.</p>
+  </div>
+
+  <div class="section-inner">
+    <div class="sciences-grid">
+      {sciences.map((science) => (
+        <ScienceCard
+          title={science.data.title}
+          titleAr={science.data.titleAr}
+          description={science.data.shortDescription}
+          href={`${base}sciences/${science.slug}`}
+          status={science.data.status}
+          bookCount={counts.get(science.slug) ?? 0}
+        />
+      ))}
+    </div>
+  </div>
+
+  <style>
+    .page-header {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: var(--space-16) var(--space-6) var(--space-8);
+    }
+    .page-header h1 { margin: var(--space-3) 0 var(--space-3); }
+    .page-header__lede { color: var(--color-text-soft); max-width: 34rem; margin: 0; }
+
+    .section-inner {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: 0 var(--space-6) var(--space-16);
+    }
+    .sciences-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--space-5);
+    }
+  </style>
+</BaseLayout>

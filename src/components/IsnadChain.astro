@@ -1,0 +1,104 @@
+---
+/**
+ * Renders a vertical chain of linked nodes — the site's signature visual
+ * motif, deliberately styled after isnad (transmission-chain) diagrams
+ * used in the hadith sciences themselves: each link is a node, connected
+ * by a single continuous line, annotated with the relationship type.
+ */
+interface ChainNode {
+  label: string;
+  labelAr?: string;
+  href?: string;
+  meta?: string; // e.g. author name, or relationship note
+  emphasis?: boolean; // true for the "current" node
+}
+
+interface Props {
+  nodes: ChainNode[];
+}
+
+const { nodes } = Astro.props;
+---
+<ol class="isnad-chain">
+  {nodes.map((node, i) => (
+    <li class="isnad-chain__item" class:list={{ "is-emphasis": node.emphasis }}>
+      <span class="isnad-chain__dot" aria-hidden="true"></span>
+      {i < nodes.length - 1 && <span class="isnad-chain__line" aria-hidden="true"></span>}
+      <div class="isnad-chain__content">
+        {node.href ? (
+          <a href={node.href} class="isnad-chain__label">{node.label}</a>
+        ) : (
+          <span class="isnad-chain__label">{node.label}</span>
+        )}
+        {node.labelAr && <span class="isnad-chain__label-ar" lang="ar">{node.labelAr}</span>}
+        {node.meta && <span class="isnad-chain__meta ui-text">{node.meta}</span>}
+      </div>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .isnad-chain {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .isnad-chain__item {
+    position: relative;
+    display: flex;
+    gap: var(--space-4);
+    padding-bottom: var(--space-6);
+  }
+  .isnad-chain__item:last-child { padding-bottom: 0; }
+
+  .isnad-chain__dot {
+    flex-shrink: 0;
+    width: 9px;
+    height: 9px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background: var(--color-muted);
+    border: 2px solid var(--color-ink);
+    box-shadow: 0 0 0 1px var(--color-border);
+    position: relative;
+    z-index: 2;
+  }
+  .isnad-chain__item.is-emphasis .isnad-chain__dot {
+    background: var(--color-accent);
+    box-shadow: 0 0 0 1px var(--color-accent);
+  }
+
+  .isnad-chain__line {
+    position: absolute;
+    left: 4px;
+    top: 14px;
+    bottom: -6px;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--color-border), var(--color-border));
+  }
+
+  .isnad-chain__content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 0;
+  }
+  .isnad-chain__label {
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    color: var(--color-text);
+  }
+  a.isnad-chain__label {
+    transition: color var(--duration-fast) var(--ease-standard);
+  }
+  a.isnad-chain__label:hover { color: var(--color-accent); }
+  .isnad-chain__label-ar {
+    font-size: var(--text-base);
+    color: var(--color-muted);
+  }
+  .isnad-chain__meta {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    margin-top: 2px;
+  }
+</style>
