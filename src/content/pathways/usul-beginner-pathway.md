@@ -1,7 +1,11 @@
 ---
-title: "Beginner Usul al-Fiqh Pathway"
+title: "Usul al-Fiqh Pathway"
 science: "usul-al-fiqh"
-description: "The standard entry point into legal theory, beginning with al-Waraqat before advancing to intermediate synthesis works."
+description: "Al-Waraqat -> al-Khulasah fi Usul al-Fiqh -> al-Luma' -> Taqrib al-Wusul -> Minhaj al-Wusul / Mukhtasar Ibn al-Hajib -> Jam' al-Jawami' — the progression from short beginner primer to the advanced capstone synthesis work."
 nodes:
   - "al-waraqat"
+  - "al-khulasah-fi-usul-al-fiqh"
+  - "al-luma-fi-usul-al-fiqh"
+  - "taqrib-al-wusul"
+  - "jam-al-jawami"
 ---

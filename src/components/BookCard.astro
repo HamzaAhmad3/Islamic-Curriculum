@@ -26,9 +26,10 @@ const typeLabel: Record<string, string> = {
     {level && <span class="book-card__level ui-text" data-level={level}>{level.replace("-", "–")}</span>}
     {hasPdf && (
       <span class="book-card__pdf ui-text" title="PDF available">
-        <svg viewBox="0 0 16 16" width="12" height="12" fill="none" aria-hidden="true">
-          <path d="M4 2h5l3 3v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.2"/>
+        <svg viewBox="0 0 16 16" width="11" height="11" fill="none" aria-hidden="true">
+          <path d="M4 2h5l3 3v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.3"/>
         </svg>
+        PDF
       </span>
     )}
   </div>
@@ -40,7 +41,7 @@ const typeLabel: Record<string, string> = {
 <style>
   .book-card {
     display: block;
-    padding: var(--space-4) var(--space-5);
+    padding: var(--space-6) var(--space-6);
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -54,8 +55,8 @@ const typeLabel: Record<string, string> = {
   .book-card__row {
     display: flex;
     align-items: center;
-    gap: var(--space-2);
-    margin-bottom: var(--space-2);
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
   }
   .book-card__type {
     font-size: var(--text-xs);
@@ -66,7 +67,7 @@ const typeLabel: Record<string, string> = {
   }
   .book-card__level {
     font-size: var(--text-xs);
-    padding: 1px 7px;
+    padding: 3px 10px;
     border-radius: 20px;
     border: 1px solid currentColor;
   }
@@ -76,13 +77,21 @@ const typeLabel: Record<string, string> = {
 
   .book-card__pdf {
     margin-left: auto;
-    color: var(--color-accent);
     display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 4px 10px;
+    border-radius: 20px;
   }
 
   .book-card__title {
     font-size: var(--text-base);
-    margin: 0 0 2px;
+    margin: 0 0 4px;
   }
   .book-card__title-ar {
     font-size: var(--text-sm);

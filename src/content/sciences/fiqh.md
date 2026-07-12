@@ -6,6 +6,7 @@ icon: "scale"
 order: 1
 relatedSciences: ["usul-al-fiqh", "qawaid", "hadith"]
 status: "developed"
+featured: true
 ---
 
 The Fiqh curriculum follows the classical Shafi'i progression, moving from short beginner primers

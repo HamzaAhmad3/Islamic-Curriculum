@@ -57,6 +57,8 @@ function formatDeathDate(d?: { ah?: number; ce?: number; note?: string }) {
 }
 
 const deathDateStr = formatDeathDate(book.data.deathDate);
+const preferredEdition = book.data.editions.find((e) => e.isPreferred) ?? book.data.editions[0] ?? null;
+const hasRecordings = book.data.recordings.length > 0;
 ---
 <BaseLayout title={book.data.title} description={book.data.notes ?? `${book.data.title} — ${science?.data.title ?? ""}`}>
   <div class="breadcrumbs ui-text">
@@ -74,7 +76,40 @@ const deathDateStr = formatDeathDate(book.data.deathDate);
         <h1>{book.data.title}</h1>
         {book.data.titleAr && <p class="book-hero__ar" lang="ar">{book.data.titleAr}</p>}
 
+        {(book.data.pdfUrl || hasRecordings) && (
+          <div class="book-actions">
+            {book.data.pdfUrl && (
+              <a href={book.data.pdfUrl} class="btn btn--pdf" target="_blank" rel="noopener noreferrer">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+                  <path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                  <path d="M14 3v5h5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+                Open PDF
+              </a>
+            )}
+            {hasRecordings && (
+              <a href="#recordings" class="btn btn--recording">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/>
+                  <path d="M10 8.5v7l6-3.5-6-3.5Z" fill="currentColor"/>
+                </svg>
+                Class recordings
+              </a>
+            )}
+          </div>
+        )}
+
         <dl class="book-meta">
+          {science && (
+            <div class="book-meta__item">
+              <dt>Science</dt>
+              <dd><a href={`${base}sciences/${science.slug}`}>{science.data.title}</a></dd>
+            </div>
+          )}
+          <div class="book-meta__item">
+            <dt>Type</dt>
+            <dd>{typeLabel[book.data.type].split(" — ")[0]}</dd>
+          </div>
           {book.data.author && (
             <div class="book-meta__item">
               <dt>Author</dt>
@@ -99,12 +134,23 @@ const deathDateStr = formatDeathDate(book.data.deathDate);
               <dd><a href={`${base}books/${parent.slug}`}>{parent.data.title}</a></dd>
             </div>
           )}
+          {preferredEdition && (preferredEdition.publisher || preferredEdition.editor) && (
+            <div class="book-meta__item">
+              <dt>Best edition</dt>
+              <dd>
+                {preferredEdition.publisher}
+                {preferredEdition.editor && <span class="ui-text"> · ed. {preferredEdition.editor}</span>}
+              </dd>
+            </div>
+          )}
         </dl>
 
-        {book.data.pdfUrl && (
-          <a href={book.data.pdfUrl} class="btn btn--primary" target="_blank" rel="noopener noreferrer">
-            Open PDF
-          </a>
+        {book.data.tags.length > 0 && (
+          <div class="tag-list tag-list--hero">
+            {book.data.tags.map((tag) => (
+              <span class="tag ui-text">{tag}</span>
+            ))}
+          </div>
         )}
       </div>
     </header>
@@ -163,28 +209,28 @@ const deathDateStr = formatDeathDate(book.data.deathDate);
     )}
 
     {book.data.recordings.length > 0 && (
-      <section class="book-section">
+      <section class="book-section" id="recordings">
         <h2>Class recordings</h2>
         <ul class="recording-list">
           {book.data.recordings.map((rec) => (
-            <li class="recording-item">
-              {rec.teacher && <strong>{rec.teacher}</strong>}
-              {rec.status && <span class="ui-text recording-item__status" data-status={rec.status}>{rec.status}</span>}
-              {rec.lastLesson && <p class="recording-item__lesson">Last lesson: {rec.lastLesson}</p>}
-              {rec.url && <a href={rec.url} target="_blank" rel="noopener noreferrer">Open recording →</a>}
+            <li class="recording-card">
+              <div class="recording-card__row">
+                {rec.teacher && <strong class="recording-card__teacher">{rec.teacher}</strong>}
+                {rec.status && <span class="ui-text recording-card__status" data-status={rec.status}>{rec.status}</span>}
+              </div>
+              {rec.lastLesson && <p class="recording-card__lesson">Last lesson: {rec.lastLesson}</p>}
+              {rec.url && (
+                <a href={rec.url} class="btn btn--recording-card" target="_blank" rel="noopener noreferrer">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M10 8.5v7l6-3.5-6-3.5Z" fill="currentColor"/>
+                  </svg>
+                  Open recording
+                </a>
+              )}
             </li>
           ))}
         </ul>
-      </section>
-    )}
-
-    {book.data.tags.length > 0 && (
-      <section class="book-section">
-        <div class="tag-list">
-          {book.data.tags.map((tag) => (
-            <span class="tag ui-text">{tag}</span>
-          ))}
-        </div>
       </section>
     )}
   </article>
@@ -206,8 +252,9 @@ const deathDateStr = formatDeathDate(book.data.deathDate);
     .book-page { max-width: 48rem; margin: 0 auto; padding: var(--space-6) var(--space-6) var(--space-24); }
 
     .book-hero { padding-bottom: var(--space-8); }
-    .book-hero__type { color: var(--color-accent); margin-bottom: var(--space-3); }
-    .book-hero__ar { font-size: var(--text-2xl); color: var(--color-muted); margin-bottom: var(--space-6); }
+    .book-hero__main h1 { margin-bottom: var(--space-4); }
+    .book-hero__type { color: var(--color-accent); margin-bottom: var(--space-4); }
+    .book-hero__ar { font-size: var(--text-2xl); color: var(--color-muted); margin: 0 0 var(--space-8); }
 
     .book-meta {
       display: flex;
@@ -232,17 +279,36 @@ const deathDateStr = formatDeathDate(book.data.deathDate);
     .book-meta__item dd[data-level^="intermediate"] { color: var(--level-intermediate); }
     .book-meta__item dd[data-level^="advanced"] { color: var(--level-advanced); }
 
+    .book-actions {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+      margin-bottom: var(--space-6);
+    }
     .btn {
       display: inline-flex;
       align-items: center;
+      gap: var(--space-2);
       padding: var(--space-3) var(--space-6);
       border-radius: var(--radius-md);
       font-family: var(--font-ui);
       font-size: var(--text-sm);
       font-weight: 600;
+      transition: filter var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
     }
     .btn--primary { background: var(--color-accent); color: var(--color-ink); }
     .btn--primary:hover { filter: brightness(1.1); }
+    .btn--pdf {
+      background: var(--color-accent);
+      color: var(--color-ink);
+    }
+    .btn--pdf:hover { filter: brightness(1.1); }
+    .btn--recording {
+      background: transparent;
+      border: 1.5px solid var(--color-accent);
+      color: var(--color-accent);
+    }
+    .btn--recording:hover { background: var(--color-accent-soft); }
 
     .book-section { padding-top: var(--space-8); border-top: 1px solid var(--color-border); margin-top: var(--space-8); }
     .book-section:first-of-type { margin-top: 0; }
@@ -274,21 +340,42 @@ const deathDateStr = formatDeathDate(book.data.deathDate);
     .related-item__title { font-family: var(--font-display); font-size: var(--text-lg); color: var(--color-accent); }
     .related-item__note { font-size: var(--text-sm); color: var(--color-muted); margin: var(--space-1) 0 0; }
 
-    .recording-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-5); }
-    .recording-item { font-size: var(--text-sm); }
-    .recording-item__status {
-      margin-left: var(--space-2);
+    .recording-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+    .recording-card {
+      padding: var(--space-5);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+    }
+    .recording-card__row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-2);
+    }
+    .recording-card__teacher { font-family: var(--font-display); font-size: var(--text-base); }
+    .recording-card__status {
       font-size: var(--text-xs);
       color: var(--color-muted);
       text-transform: capitalize;
+      border: 1px solid var(--color-border);
+      border-radius: 20px;
+      padding: 1px 8px;
     }
-    .recording-item__lesson { color: var(--color-muted); margin: var(--space-1) 0; }
-    .recording-item a { color: var(--color-accent); }
+    .recording-card__lesson { color: var(--color-muted); font-size: var(--text-sm); margin: 0 0 var(--space-3); }
+    .btn--recording-card {
+      background: var(--color-raised);
+      color: var(--color-accent);
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+    }
+    .btn--recording-card:hover { background: var(--color-accent-soft); }
 
-    .tag-list { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+    .tag-list { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+    .tag-list--hero { margin-top: var(--space-3); }
     .tag {
       font-size: var(--text-xs);
-      padding: 3px 10px;
+      padding: 5px 14px;
       border-radius: 20px;
       background: var(--color-raised);
       color: var(--color-muted);

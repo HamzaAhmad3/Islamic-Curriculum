@@ -55,14 +55,17 @@ const totalBooks = [...counts.values()].reduce((sum, n) => sum + n, 0);
 
       <div class="sciences-grid">
         {sciences.map((science) => (
-          <ScienceCard
-            title={science.data.title}
-            titleAr={science.data.titleAr}
-            description={science.data.shortDescription}
-            href={`${base}sciences/${science.slug}`}
-            status={science.data.status}
-            bookCount={counts.get(science.slug) ?? 0}
-          />
+          <div class:list={["sciences-grid__item", { "sciences-grid__item--featured": science.data.featured }]}>
+            <ScienceCard
+              title={science.data.title}
+              titleAr={science.data.titleAr}
+              description={science.data.shortDescription}
+              href={`${base}sciences/${science.slug}`}
+              status={science.data.status}
+              bookCount={counts.get(science.slug) ?? 0}
+              featured={science.data.featured}
+            />
+          </div>
         ))}
       </div>
     </div>
@@ -137,6 +140,12 @@ const totalBooks = [...counts.values()].reduce((sum, n) => sum + n, 0);
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: var(--space-5);
+    }
+    .sciences-grid__item--featured {
+      grid-column: span 2;
+    }
+    @media (max-width: 640px) {
+      .sciences-grid__item--featured { grid-column: span 1; }
     }
 
     @media (max-width: 860px) {

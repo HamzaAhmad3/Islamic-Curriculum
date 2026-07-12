@@ -116,6 +116,7 @@ const sciences = defineCollection({
     order: z.number().default(999), // homepage ordering
     relatedSciences: z.array(reference("sciences")).default([]),
     status: z.enum(["developed", "developing", "stub"]).default("developing"),
+    featured: z.boolean().default(false), // visually highlighted as the curriculum's current focus
   }),
 });
 
@@ -163,6 +164,8 @@ const dashboard = defineCollection({
     teacher: z.string().optional(),
     progress: z.string().optional(),       // e.g. "page 93", "episode 12.5"
     dateNote: z.string().optional(),       // e.g. "17th January 2026"
+    note: z.string().optional(),           // extra detail shown under the title, e.g. "would like the Dar Ibn Hazm edition"
+    priority: z.number().optional(),       // lower = more important; used to order the to-buy list
     rare: z.boolean().default(false),
     addedAt: z.date().optional(),
   }),
