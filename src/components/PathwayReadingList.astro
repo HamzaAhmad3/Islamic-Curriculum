@@ -1,0 +1,163 @@
+---
+import { getAllDescendantCommentaries, levelLabel } from "@/lib/content";
+import type { CollectionEntry } from "astro:content";
+
+interface Props {
+  nodes: CollectionEntry<"books">[];
+  supplementary?: CollectionEntry<"books">[];
+}
+
+const { nodes, supplementary = [] } = Astro.props;
+const base = import.meta.env.BASE_URL;
+
+const stages = await Promise.all(
+  nodes.map(async (book) => ({
+    book,
+    commentaries: await getAllDescendantCommentaries(book.slug),
+  }))
+);
+---
+<div class="reading-list">
+  <ol class="reading-list__stages">
+    {stages.map(({ book, commentaries }, i) => (
+      <li class="reading-list__stage">
+        <span class="reading-list__number ui-text">{i + 1}</span>
+        <div class="reading-list__content">
+          <a href={`${base}books/${book.slug}`} class="reading-list__matn">
+            {book.data.title}
+          </a>
+          {book.data.titleAr && <span class="reading-list__matn-ar" lang="ar">{book.data.titleAr}</span>}
+          {(book.data.author || book.data.level) && (
+            <div class="reading-list__meta ui-text">
+              {book.data.author && <span>{book.data.author}</span>}
+              {book.data.level && <span>{levelLabel[book.data.level]}</span>}
+            </div>
+          )}
+
+          {commentaries.length > 0 && (
+            <ul class="reading-list__commentaries">
+              {commentaries.map((c: CollectionEntry<"books">) => (
+                <li>
+                  <a href={`${base}books/${c.slug}`}>{c.data.title}</a>
+                  {c.data.author && <span class="ui-text"> — {c.data.author}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </li>
+    ))}
+  </ol>
+
+  {supplementary.length > 0 && (
+    <div class="reading-list__supplementary">
+      <p class="reading-list__supplementary-label ui-text">Recommended alongside this pathway</p>
+      <ul class="reading-list__supplementary-list">
+        {supplementary.map((s) => (
+          <li>
+            <a href={`${base}books/${s.slug}`}>{s.data.title}</a>
+            {s.data.author && <span class="ui-text"> — {s.data.author}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  )}
+</div>
+
+<style>
+  .reading-list__stages {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: stage;
+  }
+  .reading-list__stage {
+    display: flex;
+    gap: var(--space-5);
+    padding: var(--space-6) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .reading-list__stage:last-child { border-bottom: none; padding-bottom: 0; }
+  .reading-list__stage:first-child { padding-top: 0; }
+
+  .reading-list__number {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+    font-size: var(--text-sm);
+    font-weight: 700;
+  }
+
+  .reading-list__content { min-width: 0; flex: 1; }
+  .reading-list__matn {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    color: var(--color-text);
+    display: inline-block;
+  }
+  .reading-list__matn:hover { color: var(--color-accent); }
+  .reading-list__matn-ar {
+    display: block;
+    font-size: var(--text-lg);
+    color: var(--color-muted);
+    margin-top: 2px;
+  }
+  .reading-list__meta {
+    display: flex;
+    gap: var(--space-3);
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    margin-top: var(--space-2);
+  }
+
+  .reading-list__commentaries {
+    list-style: none;
+    margin: var(--space-4) 0 0;
+    padding: 0 0 0 var(--space-6);
+    border-left: 2px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .reading-list__commentaries li {
+    font-size: var(--text-sm);
+  }
+  .reading-list__commentaries a {
+    color: var(--color-text-soft);
+  }
+  .reading-list__commentaries a:hover { color: var(--color-accent); }
+
+  .reading-list__supplementary {
+    margin-top: var(--space-8);
+    padding-top: var(--space-6);
+    border-top: 1px dashed var(--color-border);
+  }
+  .reading-list__supplementary-label {
+    font-size: var(--text-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-muted);
+    margin: 0 0 var(--space-4);
+  }
+  .reading-list__supplementary-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    font-size: var(--text-sm);
+  }
+  .reading-list__supplementary-list a { color: var(--color-text); }
+  .reading-list__supplementary-list a:hover { color: var(--color-accent); }
+
+  @media (max-width: 560px) {
+    .reading-list__stage { gap: var(--space-3); }
+    .reading-list__matn { font-size: var(--text-lg); }
+  }
+</style>

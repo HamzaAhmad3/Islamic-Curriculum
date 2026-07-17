@@ -1,0 +1,211 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getBooksByScholar } from "@/lib/content";
+
+export async function getStaticPaths() {
+  const scholars = await getCollection("scholars");
+  return scholars.map((scholar) => ({
+    params: { slug: scholar.slug },
+    props: { scholar },
+  }));
+}
+
+const { scholar } = Astro.props;
+const { Content } = await render(scholar);
+const base = import.meta.env.BASE_URL;
+
+const linkedBooks = await getBooksByScholar(scholar);
+
+function formatDateBlock(d?: { ah?: number; ce?: number; note?: string }) {
+  if (!d) return null;
+  const parts = [];
+  if (d.ah) parts.push(`${d.ah} AH`);
+  if (d.ce) parts.push(`${d.ce} CE`);
+  if (d.note) parts.push(`(${d.note})`);
+  return parts.length ? parts.join(" / ") : null;
+}
+
+const bornStr = formatDateBlock(scholar.data.born);
+const diedStr = formatDateBlock(scholar.data.died);
+
+const knownWorksNotLinked = scholar.data.knownWorks.filter(
+  (w) => !linkedBooks.some((b) => w.toLowerCase().includes(b.data.title.toLowerCase().split(" (")[0].toLowerCase()))
+);
+---
+<BaseLayout title={scholar.data.name} description={scholar.data.significance}>
+  <div class="breadcrumbs ui-text">
+    <a href={`${base}scholars`}>Scholars</a>
+    <span aria-hidden="true">/</span>
+    <span>{scholar.data.name}</span>
+  </div>
+
+  <article class="scholar-page">
+    <header class="scholar-hero">
+      <h1>{scholar.data.name}</h1>
+      {scholar.data.nameAr && <p class="scholar-hero__ar" lang="ar">{scholar.data.nameAr}</p>}
+
+      <dl class="scholar-meta">
+        {scholar.data.origin && (
+          <div class="scholar-meta__item">
+            <dt>Origin</dt>
+            <dd>{scholar.data.origin}</dd>
+          </div>
+        )}
+        {bornStr && (
+          <div class="scholar-meta__item">
+            <dt>Born</dt>
+            <dd>{bornStr}</dd>
+          </div>
+        )}
+        {diedStr && (
+          <div class="scholar-meta__item">
+            <dt>Died</dt>
+            <dd>{diedStr}</dd>
+          </div>
+        )}
+        {scholar.data.expertise.length > 0 && (
+          <div class="scholar-meta__item">
+            <dt>Fields</dt>
+            <dd>{scholar.data.expertise.join(", ")}</dd>
+          </div>
+        )}
+      </dl>
+    </header>
+
+    {scholar.data.significance && (
+      <section class="scholar-section">
+        <h2>Historical significance</h2>
+        <p class="scholar-significance">{scholar.data.significance}</p>
+      </section>
+    )}
+
+    {scholar.body && (
+      <section class="scholar-section prose">
+        <h2>Biography</h2>
+        <Content />
+      </section>
+    )}
+
+    {(scholar.data.teachers.length > 0 || scholar.data.students.length > 0) && (
+      <section class="scholar-section">
+        <div class="scholar-relations">
+          {scholar.data.teachers.length > 0 && (
+            <div>
+              <h3>Major teachers</h3>
+              <ul>
+                {scholar.data.teachers.map((t) => <li>{t}</li>)}
+              </ul>
+            </div>
+          )}
+          {scholar.data.students.length > 0 && (
+            <div>
+              <h3>Major students</h3>
+              <ul>
+                {scholar.data.students.map((s) => <li>{s}</li>)}
+              </ul>
+            </div>
+          )}
+        </div>
+      </section>
+    )}
+
+    {(linkedBooks.length > 0 || knownWorksNotLinked.length > 0) && (
+      <section class="scholar-section">
+        <h2>Well-known works</h2>
+        {linkedBooks.length > 0 && (
+          <ul class="scholar-works scholar-works--linked">
+            {linkedBooks.map((book) => (
+              <li>
+                <a href={`${base}books/${book.slug}`}>{book.data.title}</a>
+                {book.data.titleAr && <span class="scholar-works__ar" lang="ar"> {book.data.titleAr}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+        {knownWorksNotLinked.length > 0 && (
+          <ul class="scholar-works">
+            {knownWorksNotLinked.map((w) => <li>{w}</li>)}
+          </ul>
+        )}
+      </section>
+    )}
+  </article>
+
+  <style>
+    .breadcrumbs {
+      max-width: 42rem;
+      margin: 0 auto;
+      padding: var(--space-6) var(--space-6) 0;
+      display: flex;
+      gap: var(--space-2);
+      font-size: var(--text-xs);
+      color: var(--color-muted);
+    }
+    .breadcrumbs a:hover { color: var(--color-accent); }
+
+    .scholar-page { max-width: 42rem; margin: 0 auto; padding: var(--space-6) var(--space-6) var(--space-24); }
+
+    .scholar-hero { padding-bottom: var(--space-8); }
+    .scholar-hero h1 { margin-bottom: var(--space-2); }
+    .scholar-hero__ar { font-size: var(--text-2xl); color: var(--color-muted); margin: 0 0 var(--space-6); }
+
+    .scholar-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-6);
+      margin: 0;
+      padding: var(--space-5) 0;
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+    }
+    .scholar-meta__item dt {
+      font-family: var(--font-ui);
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-muted);
+      margin-bottom: 2px;
+    }
+    .scholar-meta__item dd { margin: 0; font-size: var(--text-sm); }
+
+    .scholar-section { padding-top: var(--space-8); border-top: 1px solid var(--color-border); margin-top: var(--space-8); }
+    .scholar-section:first-of-type { margin-top: 0; }
+    .scholar-section h2 { font-size: var(--text-lg); margin-bottom: var(--space-4); }
+    .scholar-section h3 {
+      font-family: var(--font-ui);
+      font-size: var(--text-sm);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--color-muted);
+      margin-bottom: var(--space-3);
+    }
+    .scholar-significance { font-size: var(--text-lg); line-height: 1.7; color: var(--color-text-soft); margin: 0; }
+    .prose :global(p) { font-size: var(--text-base); line-height: 1.75; }
+
+    .scholar-relations {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: var(--space-8);
+    }
+    .scholar-relations ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
+    .scholar-relations li { font-size: var(--text-sm); color: var(--color-text-soft); }
+
+    .scholar-works { list-style: none; margin: 0 0 var(--space-2); padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+    .scholar-works--linked a {
+      font-family: var(--font-display);
+      font-size: var(--text-base);
+      color: var(--color-accent);
+    }
+    .scholar-works--linked a:hover { text-decoration: underline; }
+    .scholar-works__ar { font-size: var(--text-sm); color: var(--color-muted); }
+    .scholar-works li { font-size: var(--text-sm); color: var(--color-text-soft); }
+
+    @media (max-width: 560px) {
+      .scholar-page { padding: var(--space-4) var(--space-4) var(--space-16); }
+      .scholar-hero h1 { font-size: var(--text-3xl); }
+      .scholar-hero__ar { font-size: var(--text-xl); }
+      .scholar-meta { gap: var(--space-4); }
+    }
+  </style>
+</BaseLayout>

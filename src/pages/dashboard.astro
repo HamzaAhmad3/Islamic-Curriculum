@@ -1,0 +1,327 @@
+---
+import { getCollection, getEntry } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+const entries = await getCollection("dashboard");
+const base = import.meta.env.BASE_URL;
+
+async function resolveEntry(e: (typeof entries)[number]) {
+  const book = e.data.book ? await getEntry(e.data.book) : null;
+  const bookScience = book ? await getEntry(book.data.science) : null;
+  const labelScience = e.data.science ? await getEntry(e.data.science) : null;
+  return { ...e, resolvedBook: book, resolvedScience: bookScience ?? labelScience };
+}
+
+const resolved = await Promise.all(entries.map(resolveEntry));
+
+const grouped = {
+  studying: resolved.filter((e) => e.data.status === "studying"),
+  reading: resolved.filter((e) => e.data.status === "reading"),
+  memorizing: resolved.filter((e) => e.data.status === "memorizing"),
+  toBuy: resolved
+    .filter((e) => e.data.status === "to-buy")
+    .sort((a, b) => (a.data.priority ?? 999) - (b.data.priority ?? 999)),
+};
+
+function displayTitle(e: (typeof resolved)[number]) {
+  return e.resolvedBook?.data.title ?? e.data.label ?? "Untitled";
+}
+function displayHref(e: (typeof resolved)[number]) {
+  return e.resolvedBook ? `${base}books/${e.resolvedBook.slug}` : null;
+}
+function displayEdition(e: (typeof resolved)[number]) {
+  const editions = e.resolvedBook?.data.editions ?? [];
+  const preferred = editions.find((ed) => ed.isPreferred) ?? editions[0];
+  if (!preferred) return null;
+  return [preferred.publisher, preferred.editor && `ed. ${preferred.editor}`].filter(Boolean).join(" · ") || null;
+}
+
+const toBuySciences = [
+  ...new Map(
+    grouped.toBuy
+      .filter((e) => e.resolvedScience)
+      .map((e) => [e.resolvedScience!.slug, e.resolvedScience!.data.title])
+  ).entries(),
+].sort((a, b) => a[1].localeCompare(b[1]));
+---
+<BaseLayout title="Dashboard" description="What's currently being studied, read, and memorized — a personal, evolving snapshot.">
+  <div class="page-header">
+    <p class="eyebrow">Personal, updated most days</p>
+    <h1>Dashboard</h1>
+    <p class="page-header__lede">
+      A snapshot of what's currently in progress — not part of the catalog itself, just where the
+      curator's own study happens to be right now.
+    </p>
+  </div>
+
+  <div class="dashboard-grid">
+    <section class="dash-panel">
+      <h2 class="dash-panel__title">Currently Studying</h2>
+      {grouped.studying.length === 0 ? (
+        <p class="empty">Nothing logged yet.</p>
+      ) : (
+        <ul class="dash-list">
+          {grouped.studying.map((e) => (
+            <li class="dash-item">
+              <div class="dash-item__title-line">
+                {e.resolvedScience && <strong class="dash-item__science">{e.resolvedScience.data.title}:</strong>}
+                {displayHref(e) ? (
+                  <a href={displayHref(e)!} class="dash-item__title">{displayTitle(e)}</a>
+                ) : (
+                  <span class="dash-item__title">{displayTitle(e)}</span>
+                )}
+              </div>
+              <div class="dash-item__meta ui-text">
+                {e.data.teacher && <span>{e.data.teacher}</span>}
+                {e.data.progress && <span>{e.data.progress}</span>}
+                {e.data.dateNote && <span>{e.data.dateNote}</span>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+
+    <section class="dash-panel">
+      <h2 class="dash-panel__title">Reading</h2>
+      {grouped.reading.length === 0 ? (
+        <p class="empty">Nothing logged yet.</p>
+      ) : (
+        <ul class="dash-list">
+          {grouped.reading.map((e) => (
+            <li class="dash-item">
+              <div class="dash-item__title-line">
+                {e.resolvedScience && <strong class="dash-item__science">{e.resolvedScience.data.title}:</strong>}
+                {displayHref(e) ? (
+                  <a href={displayHref(e)!} class="dash-item__title">{displayTitle(e)}</a>
+                ) : (
+                  <span class="dash-item__title">{displayTitle(e)}</span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+
+    <section class="dash-panel">
+      <h2 class="dash-panel__title">Memorizing</h2>
+      {grouped.memorizing.length === 0 ? (
+        <p class="empty">Nothing logged yet.</p>
+      ) : (
+        <ul class="dash-list">
+          {grouped.memorizing.map((e) => (
+            <li class="dash-item">
+              <div class="dash-item__title-line">
+                {e.resolvedScience && <strong class="dash-item__science">{e.resolvedScience.data.title}:</strong>}
+                {displayHref(e) ? (
+                  <a href={displayHref(e)!} class="dash-item__title">{displayTitle(e)}</a>
+                ) : (
+                  <span class="dash-item__title">{displayTitle(e)}</span>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  </div>
+
+  <section class="section">
+    <div class="section-inner">
+      <div class="section-heading-row">
+        <div>
+          <h2 class="section-heading-row__title">To Buy</h2>
+          <p class="section-heading-row__count ui-text">{grouped.toBuy.length} books on the list, most wanted first</p>
+        </div>
+        {toBuySciences.length > 1 && (
+          <select id="buy-filter" class="buy-filter ui-text" aria-label="Filter by science">
+            <option value="">All sciences</option>
+            {toBuySciences.map(([slug, title]) => <option value={slug}>{title}</option>)}
+          </select>
+        )}
+      </div>
+
+      <ol class="buy-list" id="buy-list">
+        {grouped.toBuy.map((e) => (
+          <li class="buy-row" data-science={e.resolvedScience?.slug ?? ""}>
+            {displayHref(e) ? (
+              <a href={displayHref(e)!} class="buy-row__title">{displayTitle(e)}</a>
+            ) : (
+              <span class="buy-row__title">{displayTitle(e)}</span>
+            )}
+            {displayEdition(e) && <em class="buy-row__edition">{displayEdition(e)}</em>}
+            {e.data.rare && <span class="buy-row__rare ui-text">Rare</span>}
+          </li>
+        ))}
+      </ol>
+      <p id="buy-empty" class="empty" hidden>No books match this filter.</p>
+    </div>
+  </section>
+
+  <script>
+    const filter = document.getElementById("buy-filter") as HTMLSelectElement | null;
+    const rows = Array.from(document.querySelectorAll<HTMLLIElement>("#buy-list .buy-row"));
+    const empty = document.getElementById("buy-empty");
+
+    filter?.addEventListener("change", () => {
+      let visible = 0;
+      for (const row of rows) {
+        const show = !filter.value || row.dataset.science === filter.value;
+        row.hidden = !show;
+        if (show) visible++;
+      }
+      if (empty) empty.hidden = visible !== 0;
+    });
+  </script>
+
+  <style>
+    .page-header {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: var(--space-16) var(--space-6) var(--space-10);
+    }
+    .page-header h1 { margin: var(--space-3) 0 var(--space-4); }
+    .page-header__lede { color: var(--color-text-soft); max-width: 34rem; margin: 0; }
+
+    .dashboard-grid {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: 0 var(--space-6) var(--space-16);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: var(--space-6);
+    }
+
+    .dash-panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-8);
+    }
+    .dash-panel__title {
+      text-align: center;
+      font-size: var(--text-2xl);
+      font-weight: 700;
+      font-family: var(--font-display);
+      color: var(--color-text);
+      margin: 0 0 var(--space-8);
+      padding-bottom: var(--space-6);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .dash-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-6); }
+    .dash-item__title-line {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: baseline;
+    }
+    .dash-item__science {
+      font-family: var(--font-ui);
+      font-size: var(--text-sm);
+      font-weight: 700;
+      color: var(--color-accent);
+    }
+    .dash-item__title {
+      font-family: var(--font-display);
+      font-size: var(--text-base);
+      color: var(--color-text);
+      line-height: 1.5;
+    }
+    a.dash-item__title:hover { color: var(--color-accent); }
+    .dash-item__meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+      font-size: var(--text-xs);
+      color: var(--color-muted);
+      margin-top: var(--space-2);
+    }
+
+    .empty { color: var(--color-muted); font-size: var(--text-sm); font-style: italic; margin: 0; text-align: center; padding: var(--space-4) 0; }
+
+    .section { border-top: 1px solid var(--color-border); padding: var(--space-12) 0 var(--space-16); }
+    .section-inner { max-width: 60rem; margin: 0 auto; padding: 0 var(--space-6); }
+    .section-heading-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+      margin-bottom: var(--space-8);
+    }
+    .section-heading-row__title { margin: 0 0 var(--space-2); }
+    .section-heading-row__count {
+      font-size: var(--text-xs);
+      color: var(--color-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin: 0;
+    }
+    .buy-filter {
+      appearance: none;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-2) var(--space-8) var(--space-2) var(--space-4);
+      font-size: var(--text-sm);
+      color: var(--color-text-soft);
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6l4 4 4-4' stroke='%238fa3b0' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+    .buy-filter:hover, .buy-filter:focus { border-color: var(--color-accent); }
+
+    .buy-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      counter-reset: buy;
+    }
+    .buy-row {
+      counter-increment: buy;
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-2);
+      border-bottom: 1px solid var(--color-border);
+      font-size: var(--text-sm);
+    }
+    .buy-row::before {
+      content: counter(buy) ".";
+      flex-shrink: 0;
+      width: 1.75rem;
+      color: var(--color-muted);
+      font-family: var(--font-ui);
+      font-size: var(--text-xs);
+    }
+    .buy-row__title { color: var(--color-text); flex-shrink: 0; }
+    a.buy-row__title:hover { color: var(--color-accent); }
+    .buy-row__edition {
+      color: var(--color-muted);
+      font-style: italic;
+      font-size: var(--text-xs);
+    }
+    .buy-row__rare {
+      margin-left: auto;
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      color: var(--color-danger);
+      border: 1px solid var(--color-danger);
+      border-radius: 20px;
+      padding: 2px 8px;
+    }
+
+    @media (max-width: 560px) {
+      .page-header { padding-top: var(--space-8); }
+      .page-header h1 { font-size: var(--text-3xl); }
+      .dash-panel { padding: var(--space-6); }
+      .buy-row { flex-wrap: wrap; }
+      .buy-row__rare { margin-left: 1.75rem; }
+    }
+  </style>
+</BaseLayout>

@@ -1,0 +1,98 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { getSortedScholars } from "@/lib/content";
+
+const scholars = await getSortedScholars();
+const base = import.meta.env.BASE_URL;
+
+function formatDied(s: (typeof scholars)[number]) {
+  const d = s.data.died;
+  if (!d) return "Date unknown";
+  const parts = [];
+  if (d.ah) parts.push(`${d.ah} AH`);
+  if (d.ce) parts.push(`${d.ce} CE`);
+  if (d.note) parts.push(`(${d.note})`);
+  return parts.length ? `d. ${parts.join(" / ")}` : "Date unknown";
+}
+---
+<BaseLayout title="Scholars" description="The authors behind the curriculum's texts, ordered chronologically.">
+  <div class="page-header">
+    <p class="eyebrow">The people behind the texts</p>
+    <h1>Scholars</h1>
+    <p class="page-header__lede">
+      {scholars.length} scholars represented across the curriculum, ordered chronologically by
+      death date — from the earliest classical authorities to contemporary teachers.
+    </p>
+  </div>
+
+  <div class="section-inner">
+    <ol class="scholar-timeline">
+      {scholars.map((scholar) => (
+        <li class="scholar-row">
+          <a href={`${base}scholars/${scholar.slug}`} class="scholar-row__link">
+            <span class="scholar-row__died ui-text">{formatDied(scholar)}</span>
+            <span class="scholar-row__main">
+              <span class="scholar-row__name">{scholar.data.name}</span>
+              {scholar.data.nameAr && <span class="scholar-row__name-ar" lang="ar">{scholar.data.nameAr}</span>}
+            </span>
+            {scholar.data.expertise.length > 0 && (
+              <span class="scholar-row__expertise ui-text">{scholar.data.expertise.join(" · ")}</span>
+            )}
+          </a>
+        </li>
+      ))}
+    </ol>
+  </div>
+
+  <style>
+    .page-header {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: var(--space-16) var(--space-6) var(--space-10);
+    }
+    .page-header h1 { margin: var(--space-3) 0 var(--space-4); }
+    .page-header__lede { color: var(--color-text-soft); max-width: 36rem; margin: 0; }
+
+    .section-inner { max-width: 60rem; margin: 0 auto; padding: 0 var(--space-6) var(--space-16); }
+
+    .scholar-timeline {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-top: 1px solid var(--color-border);
+    }
+    .scholar-row { border-bottom: 1px solid var(--color-border); }
+    .scholar-row__link {
+      display: grid;
+      grid-template-columns: 8rem 1fr auto;
+      align-items: center;
+      gap: var(--space-5);
+      padding: var(--space-5) var(--space-3);
+      transition: background var(--duration-fast) var(--ease-standard);
+    }
+    .scholar-row__link:hover { background: var(--color-surface); }
+    .scholar-row__died {
+      font-size: var(--text-xs);
+      color: var(--color-muted);
+      white-space: nowrap;
+    }
+    .scholar-row__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .scholar-row__name { font-family: var(--font-display); font-size: var(--text-lg); color: var(--color-text); }
+    .scholar-row__name-ar { font-size: var(--text-base); color: var(--color-muted); }
+    .scholar-row__expertise {
+      font-size: var(--text-xs);
+      color: var(--color-muted);
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 640px) {
+      .page-header { padding-top: var(--space-8); }
+      .scholar-row__link {
+        grid-template-columns: 1fr;
+        gap: var(--space-1);
+      }
+      .scholar-row__expertise { text-align: left; }
+    }
+  </style>
+</BaseLayout>
