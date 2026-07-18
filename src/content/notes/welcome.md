@@ -1,7 +1,7 @@
 ---
 title: "Welcome"
 date: 2026-07-18
-pinned: true
+pinned: false
 ---
 
 This site is a work in progress and grows a little most days. If a science looks thin or a

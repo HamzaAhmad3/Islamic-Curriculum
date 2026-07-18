@@ -276,6 +276,15 @@ const toBuySciences = [
     }
     .note__body :global(p:last-child) { margin-bottom: 0; }
 
+    .note__body :global(a) {
+  color: var(--color-accent); /* Makes it your theme's accent color */
+  text-decoration: underline;  /* Adds an underline so it screams "click me" */
+}
+.note__body :global(a:hover) {
+  filter: brightness(1.2);    /* Makes it light up slightly when hovered */
+}
+
+
     .dashboard-grid {
       max-width: 78rem;
       margin: 0 auto;
