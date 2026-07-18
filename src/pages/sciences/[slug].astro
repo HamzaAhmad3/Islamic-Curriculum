@@ -1,0 +1,382 @@
+---
+import { getCollection, getEntry, render } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import BookCard from "@/components/BookCard.astro";
+import IsnadChain from "@/components/IsnadChain.astro";
+import PathwayReadingList from "@/components/PathwayReadingList.astro";
+import {
+  getPathwaysForScience,
+  resolvePathwayNodes,
+  resolvePathwaySupplementary,
+  getUncoveredBooksForScience,
+  getGuidesForScience,
+  levelLabel,
+} from "@/lib/content";
+
+export async function getStaticPaths() {
+  const sciences = await getCollection("sciences");
+  return sciences.map((science) => ({
+    params: { slug: science.slug },
+    props: { science },
+  }));
+}
+
+const { science } = Astro.props;
+const { Content } = await render(science);
+const base = import.meta.env.BASE_URL;
+
+const allPathways = await getPathwaysForScience(science.slug);
+const primaryPathway = allPathways.find((p) => p.data.isPrimary) ?? allPathways[0] ?? null;
+const alternativePathways = allPathways.filter((p) => p.slug !== primaryPathway?.slug);
+
+const uncoveredBooks = await getUncoveredBooksForScience(science.slug);
+
+const relatedSciences = await Promise.all(
+  (science.data.relatedSciences ?? []).map((ref) => getEntry(ref))
+);
+const relatedGuides = await getGuidesForScience(science.slug);
+
+const statusCopy: Record<string, string> = {
+  developed: "This section is well developed, with multiple pathways and commentaries mapped.",
+  developing: "This section is actively growing — more texts and commentaries are being added.",
+  stub: "This section is just beginning. Only a handful of texts are catalogued so far.",
+};
+
+const primaryNodes = primaryPathway ? await resolvePathwayNodes(primaryPathway) : [];
+const primarySupplementary = primaryPathway ? await resolvePathwaySupplementary(primaryPathway) : [];
+
+const resolvedAlternatives = await Promise.all(
+  alternativePathways.map(async (pathway) => ({
+    pathway,
+    nodes: await resolvePathwayNodes(pathway),
+    supplementary: await resolvePathwaySupplementary(pathway),
+  }))
+);
+---
+<BaseLayout title={science.data.title} description={science.data.shortDescription}>
+  <div class="breadcrumbs ui-text">
+    <a href={`${base}sciences`}>Sciences</a>
+    <span aria-hidden="true">/</span>
+    <span>{science.data.title}</span>
+  </div>
+
+  <header class="science-header">
+    <p class="eyebrow" data-status={science.data.status}>{statusCopy[science.data.status]}</p>
+    <h1>{science.data.title}</h1>
+    {science.data.titleAr && <p class="science-header__ar" lang="ar">{science.data.titleAr}</p>}
+    <div class="science-header__content">
+      <Content />
+    </div>
+  </header>
+
+  {primaryPathway && primaryNodes.length > 0 && (
+    <section class="pathway-section pathway-section--primary">
+      <div class="section-inner">
+        <div class="pathway-section__badge-row">
+          <span class="pathway-section__badge ui-text">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" aria-hidden="true">
+              <path d="M8 1.5l1.9 4.3 4.6.5-3.5 3.1 1 4.6L8 11.7l-4 2.3 1-4.6L1.5 6.3l4.6-.5L8 1.5Z"/>
+            </svg>
+            Primary Pathway
+          </span>
+        </div>
+        <h2 class="pathway-section__title">{primaryPathway.data.title}</h2>
+        {primaryPathway.data.description && (
+          <p class="pathway-section__desc">{primaryPathway.data.description}</p>
+        )}
+
+        <div class="pathway-diagram pathway-diagram--lg">
+          <IsnadChain
+            size="lg"
+            nodes={primaryNodes.map((n) => ({
+              label: n.data.title,
+              labelAr: n.data.titleAr,
+              href: `${base}books/${n.slug}`,
+              meta: n.data.level ? levelLabel[n.data.level] : undefined,
+            }))}
+          />
+        </div>
+
+        <div class="reading-order-wrap">
+          <p class="reading-order-label ui-text">Complete reading order</p>
+          <PathwayReadingList nodes={primaryNodes} supplementary={primarySupplementary} />
+        </div>
+      </div>
+    </section>
+  )}
+
+  {resolvedAlternatives.map(({ pathway, nodes, supplementary }) => nodes.length > 0 && (
+    <section class="pathway-section pathway-section--alt">
+      <div class="section-inner">
+        <span class="pathway-section__badge pathway-section__badge--alt ui-text">Alternative Pathway</span>
+        <h2 class="pathway-section__title pathway-section__title--alt">{pathway.data.title}</h2>
+        {pathway.data.description && (
+          <p class="pathway-section__desc">{pathway.data.description}</p>
+        )}
+
+        <div class="pathway-diagram">
+          <IsnadChain
+            nodes={nodes.map((n) => ({
+              label: n.data.title,
+              labelAr: n.data.titleAr,
+              href: `${base}books/${n.slug}`,
+              meta: n.data.level ? levelLabel[n.data.level] : undefined,
+            }))}
+          />
+        </div>
+
+        <div class="reading-order-wrap">
+          <p class="reading-order-label ui-text">Complete reading order</p>
+          <PathwayReadingList nodes={nodes} supplementary={supplementary} />
+        </div>
+      </div>
+    </section>
+  ))}
+
+  {!primaryPathway && (
+    <section class="section">
+      <div class="section-inner">
+        {uncoveredBooks.length === 0 ? (
+          <p class="empty-state">No texts catalogued yet for this science — check back soon.</p>
+        ) : (
+          <>
+            <h2>Texts</h2>
+            <div class="book-grid">
+              {uncoveredBooks.map((book) => (
+                <BookCard
+                  title={book.data.title}
+                  titleAr={book.data.titleAr}
+                  author={book.data.author}
+                  level={book.data.level}
+                  type={book.data.type}
+                  hasPdf={Boolean(book.data.pdfUrl)}
+                  href={`${base}books/${book.slug}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </section>
+  )}
+
+  {primaryPathway && uncoveredBooks.length > 0 && (
+    <section class="section section--muted">
+      <div class="section-inner">
+        <h2>Additional &amp; Reference Texts</h2>
+        <p class="section-note">Not yet part of a named pathway, but part of the catalog.</p>
+        <div class="book-grid">
+          {uncoveredBooks.map((book) => (
+            <BookCard
+              title={book.data.title}
+              titleAr={book.data.titleAr}
+              author={book.data.author}
+              level={book.data.level}
+              type={book.data.type}
+              hasPdf={Boolean(book.data.pdfUrl)}
+              href={`${base}books/${book.slug}`}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {relatedGuides.length > 0 && (
+    <section class="section">
+      <div class="section-inner">
+        <h2>Guides</h2>
+        <div class="guide-links">
+          {relatedGuides.map((guide) => (
+            <a href={`${base}guides/${guide.slug}`} class="guide-link">
+              <span class="guide-link__title">{guide.data.title}</span>
+              {guide.data.summary && <span class="guide-link__summary">{guide.data.summary}</span>}
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  {relatedSciences.length > 0 && (
+    <section class="section section--muted">
+      <div class="section-inner">
+        <h2>Related sciences</h2>
+        <div class="related-list">
+          {relatedSciences.filter(Boolean).map((rel) => (
+            <a href={`${base}sciences/${rel!.slug}`} class="related-pill ui-text">{rel!.data.title}</a>
+          ))}
+        </div>
+      </div>
+    </section>
+  )}
+
+  <style>
+    .breadcrumbs {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: var(--space-6) var(--space-6) 0;
+      display: flex;
+      gap: var(--space-2);
+      font-size: var(--text-xs);
+      color: var(--color-muted);
+    }
+    .breadcrumbs a { color: var(--color-muted); }
+    .breadcrumbs a:hover { color: var(--color-accent); }
+
+    .science-header {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: var(--space-6) var(--space-6) var(--space-8);
+    }
+    .science-header .eyebrow[data-status="developed"] { color: var(--level-beginner); }
+    .science-header .eyebrow[data-status="developing"] { color: var(--color-accent); }
+    .science-header h1 { margin-bottom: var(--space-4); }
+    .science-header__ar {
+      font-size: var(--text-xl);
+      color: var(--color-muted);
+      margin: 0 0 var(--space-8);
+    }
+    .science-header__content {
+      max-width: 42rem;
+      font-size: var(--text-lg);
+    }
+
+    .section { border-top: 1px solid var(--color-border); padding: var(--space-12) 0; }
+    .section--muted { background: var(--color-surface); }
+    .section-inner { max-width: 78rem; margin: 0 auto; padding: 0 var(--space-6); }
+    .section h2 { margin-bottom: var(--space-3); }
+    .section-note { font-size: var(--text-sm); color: var(--color-muted); margin: 0 0 var(--space-6); }
+
+    /* --- Pathway sections --- */
+    .pathway-section {
+      border-top: 1px solid var(--color-border);
+      padding: var(--space-16) 0;
+    }
+    .pathway-section--primary {
+      background: linear-gradient(180deg, var(--color-accent-soft), transparent 40%);
+    }
+    .pathway-section--alt {
+      background: var(--color-surface);
+    }
+    .pathway-section .section-inner { max-width: 52rem; text-align: center; }
+
+    .pathway-section__badge-row { display: flex; justify-content: center; }
+    .pathway-section__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--color-accent);
+      border: 1px solid var(--color-accent);
+      border-radius: 20px;
+      padding: var(--space-2) var(--space-5);
+      margin-bottom: var(--space-5);
+    }
+    .pathway-section__badge--alt {
+      color: var(--color-muted);
+      border-color: var(--color-border);
+      display: inline-block;
+      margin-bottom: var(--space-5);
+    }
+
+    .pathway-section__title { font-size: var(--text-3xl); margin-bottom: var(--space-4); }
+    .pathway-section__title--alt { font-size: var(--text-2xl); }
+    .pathway-section__desc {
+      color: var(--color-text-soft);
+      max-width: 38rem;
+      margin: 0 auto var(--space-12);
+      font-size: var(--text-base);
+    }
+
+    .pathway-diagram {
+      display: flex;
+      justify-content: center;
+      margin-bottom: var(--space-12);
+    }
+    .pathway-diagram :global(.isnad-chain) {
+      display: inline-block;
+      text-align: left;
+    }
+
+    .reading-order-wrap {
+      text-align: left;
+      max-width: 40rem;
+      margin: 0 auto;
+      padding: var(--space-10) var(--space-8);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+    }
+    .pathway-section--alt .reading-order-wrap { background: var(--color-ink); }
+    .reading-order-label {
+      font-size: var(--text-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-accent);
+      margin: 0 0 var(--space-6);
+    }
+
+    .book-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: var(--space-4);
+    }
+
+    .empty-state {
+      color: var(--color-muted);
+      font-style: italic;
+      padding: var(--space-8);
+      border: 1px dashed var(--color-border);
+      border-radius: var(--radius-md);
+      text-align: center;
+    }
+
+    .related-list { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+    .related-pill {
+      padding: var(--space-2) var(--space-4);
+      border: 1px solid var(--color-border);
+      border-radius: 20px;
+      font-size: var(--text-sm);
+      transition: border-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+    }
+    .related-pill:hover { border-color: var(--color-accent); color: var(--color-accent); }
+
+    .guide-links { display: flex; flex-direction: column; gap: var(--space-4); max-width: 40rem; }
+    .guide-link {
+      display: block;
+      padding: var(--space-5) var(--space-6);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      transition: border-color var(--duration-fast) var(--ease-standard);
+    }
+    .guide-link:hover { border-color: var(--color-accent); }
+    .guide-link__title {
+      display: block;
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      color: var(--color-accent);
+      margin-bottom: var(--space-1);
+    }
+    .guide-link__summary {
+      display: block;
+      font-size: var(--text-sm);
+      color: var(--color-muted);
+    }
+
+    @media (max-width: 560px) {
+      .science-header { padding-top: var(--space-4); }
+      .science-header h1 { font-size: var(--text-3xl); }
+      .science-header__ar { font-size: var(--text-lg); }
+      .science-header__content { font-size: var(--text-base); }
+      .book-grid { grid-template-columns: 1fr; }
+      .pathway-section { padding: var(--space-10) 0; }
+      .pathway-section__title { font-size: var(--text-2xl); }
+      .reading-order-wrap { padding: var(--space-6) var(--space-4); }
+    }
+  </style>
+</BaseLayout>

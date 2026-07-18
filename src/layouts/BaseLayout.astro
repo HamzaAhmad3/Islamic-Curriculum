@@ -1,0 +1,363 @@
+---
+import "@/styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "A living map of the Islamic sciences — texts, commentaries, and the pathways between them." } = Astro.props;
+const base = import.meta.env.BASE_URL;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title} · Islamic Studies Curriculum</title>
+    <meta name="description" content={description} />
+    <link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+    <script is:inline>
+      // Runs before paint to avoid a flash of the wrong theme.
+      const saved = localStorage.getItem("theme");
+      if (saved) document.documentElement.setAttribute("data-theme", saved);
+    </script>
+  </head>
+  <body>
+    <a href="#main" class="skip-link">Skip to content</a>
+
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a href={base} class="site-header__brand">
+          <span class="site-header__mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path d="M4 5c4 0 6 1.5 8 4 2-2.5 4-4 8-4M4 5v13c4 0 6 1.5 8 4M20 5v13c-4 0-6 1.5-8 4M4 18c4 0 6 1.5 8 4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="site-header__title">Islamic Studies Curriculum</span>
+        </a>
+
+        <nav class="site-header__nav ui-text" aria-label="Primary" id="primary-nav">
+          <a href={`${base}sciences`}>Sciences</a>
+          <a href={`${base}scholars`}>Scholars</a>
+          <a href={`${base}library`}>Library</a>
+          <a href={`${base}dashboard`}>Dashboard</a>
+          <a href={`${base}guides`}>Guides</a>
+        </nav>
+
+        <div class="site-header__actions">
+          <a href={`${base}search`} class="site-header__search" aria-label="Search">
+            <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
+              <circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M20 20l-4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <span>Search</span>
+            <kbd class="site-header__kbd" aria-hidden="true">/</kbd>
+          </a>
+
+          <button id="theme-toggle" class="theme-toggle ui-text" aria-label="Toggle color theme" type="button">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" aria-hidden="true">
+              <path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+            </svg>
+          </button>
+
+          <button id="nav-toggle" class="nav-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="primary-nav" type="button">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true" class="nav-toggle__open-icon">
+              <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true" class="nav-toggle__close-icon">
+              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <footer class="site-footer ui-text">
+      <div class="site-footer__inner">
+        <p>A living, growing catalog — edited directly on GitHub, updated most days.</p>
+        <div class="site-footer__links">
+          <a href="https://docs.google.com/document/d/REPLACE_WITH_YOUR_DOCUMENT_ID" target="_blank" rel="noopener noreferrer" class="site-footer__doc-link">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+              <path d="M4 1.5h5.5L13 5v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2.5a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M9.5 1.5V5H13" stroke="currentColor" stroke-width="1.2"/>
+              <path d="M4.75 8h6.5M4.75 10h6.5M4.75 12h4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
+            </svg>
+            Original Curriculum Document
+          </a>
+          <a href="https://github.com/HamzaAhmad3/Islamic-Curriculum" target="_blank" rel="noopener noreferrer">View source</a>
+        </div>
+      </div>
+    </footer>
+
+    <script is:inline define:vars={{ base }}>
+      const toggle = document.getElementById("theme-toggle");
+      toggle?.addEventListener("click", () => {
+        const current = document.documentElement.getAttribute("data-theme")
+          || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+        const next = current === "dark" ? "light" : "dark";
+        document.documentElement.setAttribute("data-theme", next);
+        localStorage.setItem("theme", next);
+      });
+
+      // Press "/" from anywhere to jump to search, unless typing in a field already.
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "/") return;
+        const tag = document.activeElement?.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA") return;
+        e.preventDefault();
+        window.location.href = `${base}search`;
+      });
+
+      // Mobile hamburger menu
+      const navToggle = document.getElementById("nav-toggle");
+      const primaryNav = document.getElementById("primary-nav");
+
+      function closeNav() {
+        primaryNav?.classList.remove("is-open");
+        navToggle?.setAttribute("aria-expanded", "false");
+      }
+      function openNav() {
+        primaryNav?.classList.add("is-open");
+        navToggle?.setAttribute("aria-expanded", "true");
+      }
+
+      navToggle?.addEventListener("click", () => {
+        const isOpen = primaryNav?.classList.contains("is-open");
+        if (isOpen) closeNav();
+        else openNav();
+      });
+
+      // Close when a nav link is tapped.
+      primaryNav?.addEventListener("click", (e) => {
+        if (e.target instanceof HTMLElement && e.target.closest("a")) closeNav();
+      });
+
+      // Close on outside click.
+      document.addEventListener("click", (e) => {
+        if (!(e.target instanceof Node)) return;
+        if (primaryNav?.contains(e.target) || navToggle?.contains(e.target)) return;
+        closeNav();
+      });
+
+      // Close on Escape.
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") closeNav();
+      });
+
+      // If the viewport is resized past the mobile breakpoint while open, reset state.
+      window.addEventListener("resize", () => {
+        if (window.innerWidth > 860) closeNav();
+      });
+    </script>
+
+    <style>
+      .skip-link {
+        position: absolute;
+        left: -999px;
+        top: 0;
+        background: var(--color-accent);
+        color: var(--color-ink);
+        padding: var(--space-2) var(--space-4);
+        z-index: 100;
+        font-family: var(--font-ui);
+        font-weight: 600;
+      }
+      .skip-link:focus {
+        left: var(--space-4);
+        top: var(--space-4);
+      }
+
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: color-mix(in srgb, var(--color-ink) 88%, transparent);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--color-border);
+      }
+      .site-header__inner {
+        max-width: 78rem;
+        margin: 0 auto;
+        padding: var(--space-4) var(--space-6);
+        display: flex;
+        align-items: center;
+        gap: var(--space-8);
+      }
+      .site-header__brand {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        margin-right: auto;
+        min-width: 0;
+      }
+      .site-header__mark {
+        color: var(--color-accent);
+        display: flex;
+        flex-shrink: 0;
+      }
+      .site-header__title {
+        font-family: var(--font-display);
+        font-size: var(--text-lg);
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .site-header__nav {
+        display: flex;
+        align-items: center;
+        gap: var(--space-6);
+        font-size: var(--text-sm);
+      }
+      .site-header__nav a {
+        color: var(--color-muted);
+        transition: color var(--duration-fast) var(--ease-standard);
+        white-space: nowrap;
+      }
+      .site-header__nav a:hover { color: var(--color-text); }
+
+      .site-header__actions {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        flex-shrink: 0;
+      }
+
+      .site-header__search {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        padding: var(--space-1) var(--space-3);
+        color: var(--color-muted);
+        flex-shrink: 0;
+        transition: color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
+      }
+      .site-header__search:hover { color: var(--color-text); border-color: var(--color-accent); }
+      .site-header__kbd {
+        margin-left: var(--space-2);
+        font-family: var(--font-ui);
+        font-size: 10px;
+        padding: 1px 6px;
+        border: 1px solid var(--color-border);
+        border-radius: 4px;
+        color: var(--color-muted);
+      }
+
+      .theme-toggle {
+        width: 40px;
+        height: 40px;
+        display: grid;
+        place-items: center;
+        background: transparent;
+        border: 1px solid var(--color-border);
+        border-radius: 50%;
+        cursor: pointer;
+        color: var(--color-muted);
+        flex-shrink: 0;
+        transition: color var(--duration-fast) var(--ease-standard),
+                    border-color var(--duration-fast) var(--ease-standard);
+      }
+      .theme-toggle:hover { color: var(--color-accent); border-color: var(--color-accent); }
+
+      .nav-toggle {
+        display: none;
+        width: 40px;
+        height: 40px;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        color: var(--color-text);
+        flex-shrink: 0;
+      }
+      .nav-toggle__close-icon { display: none; }
+      .nav-toggle[aria-expanded="true"] .nav-toggle__open-icon { display: none; }
+      .nav-toggle[aria-expanded="true"] .nav-toggle__close-icon { display: block; }
+
+      /* --- Mobile: collapse the text nav behind a hamburger, full-width dropdown --- */
+      @media (max-width: 860px) {
+        .site-header__inner { padding: var(--space-3) var(--space-4); gap: var(--space-4); }
+        .site-header__title { font-size: var(--text-base); max-width: 12rem; }
+
+        .site-header__nav {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 0;
+          background: var(--color-ink);
+          border-bottom: 1px solid var(--color-border);
+          max-height: 0;
+          overflow: hidden;
+          opacity: 0;
+          transition: max-height var(--duration-base) var(--ease-standard),
+                      opacity var(--duration-base) var(--ease-standard);
+        }
+        .site-header__nav.is-open {
+          max-height: 24rem;
+          opacity: 1;
+        }
+        .site-header__nav a {
+          padding: var(--space-4) var(--space-6);
+          font-size: var(--text-base);
+          border-bottom: 1px solid var(--color-border);
+          min-height: 44px;
+          display: flex;
+          align-items: center;
+        }
+
+        .site-header__search span { display: none; }
+        .site-header__kbd { display: none; }
+        .site-header__search { padding: var(--space-2); border-radius: 50%; width: 44px; height: 44px; justify-content: center; }
+
+        .theme-toggle { width: 44px; height: 44px; }
+        .nav-toggle { display: flex; width: 44px; height: 44px; }
+      }
+
+      .site-footer {
+        border-top: 1px solid var(--color-border);
+        margin-top: var(--space-24);
+      }
+      .site-footer__inner {
+        max-width: 78rem;
+        margin: 0 auto;
+        padding: var(--space-8) var(--space-6);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--space-4);
+        color: var(--color-muted);
+        font-size: var(--text-sm);
+      }
+      .site-footer__inner p { margin: 0; }
+      .site-footer__inner a { color: var(--color-muted); text-decoration: underline; text-underline-offset: 3px; }
+      .site-footer__inner a:hover { color: var(--color-accent); }
+      .site-footer__links {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--space-6);
+      }
+      .site-footer__doc-link {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
+        text-decoration: none !important;
+      }
+      .site-footer__doc-link:hover { text-decoration: underline !important; }
+      .site-footer__doc-link svg { flex-shrink: 0; opacity: 0.7; }
+    </style>
+  </body>
+</html>
