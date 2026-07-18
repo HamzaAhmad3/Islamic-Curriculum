@@ -8,11 +8,14 @@ If you have any suggestions leave them right [here](https://forms.gle/oDQjRCZqs2
 
 simple:
 - fix spacing of notes on dashboard page
-- 
+- final polish pass
+
+
 
 
 difficult:
 - make the site mobile friendly
+- Beef up remaining 70 scholars bios'
 - 
 
 
