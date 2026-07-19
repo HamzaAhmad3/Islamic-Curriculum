@@ -13,6 +13,10 @@ related:
   - ref: "kashifat-us-saja"
     kind: "leads-to"
     note: "Occasionally brings in intermediate concepts with spiritual (tasawwuf) insights."
+recordings:
+  - platform: "YouTube"
+    url: "https://www.youtube.com/playlist?list=PL0DsMWXoSjqkiLpbit4VKkYYBwUAiBG4F"
+    status: "ongoing"
 ---
 
 The most common starting point in the Shafi'i fiqh pathway — a very short primer covering the essentials of purification and prayer, intended as a first foothold before moving to longer beginner texts like al-Mukhtasar al-Lateef.

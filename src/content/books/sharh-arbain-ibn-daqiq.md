@@ -10,6 +10,7 @@ deathDate:
 level: "beginner-intermediate"
 tags: ["hadith", "sharh"]
 notes: "On the personal 'to buy' list, transliterated there as Sharh al-Arba'in an-Nawawi."
+pdfUrl: "https://archive.org/details/ArbaounNawawiDaghigAled/mode/2up"
 ---
 
 A classic, brief legal breakdown that focuses strictly on extracting the core ahkam (rulings) and linguistic lessons from each hadith without unnecessary length.

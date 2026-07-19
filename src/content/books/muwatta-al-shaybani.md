@@ -11,6 +11,7 @@ related:
   - ref: "muwatta-imam-shafii"
     kind: "riwayah-variant"
 notes: "An essential comparative read for advanced students, showing how the early Hanafi legal school evaluated the Madinan hadith corpus."
+pdfUrl: "https://files.turath.io/pdf/shamela/16050/66073.pdf#pdfjs.action=download"
 ---
 
 A transmission of Imam Malik's al-Muwatta through the early Hanafi jurist Muhammad ibn al-Hasan al-Shaybani, valuable for comparative study of how different early schools engaged with the same hadith corpus.

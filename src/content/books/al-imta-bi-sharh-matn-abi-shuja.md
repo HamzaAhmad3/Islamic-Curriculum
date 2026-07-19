@@ -7,6 +7,7 @@ parent: "matn-abi-shuja"
 author: "Hisham al-Kamil"
 level: "beginner"
 tags: ["shafii", "sharh", "modern"]
+pdfUrl: "https://drive.google.com/file/d/17101K5lgmKWmUmRQGJeneb2nkYcoHY2w/view"
 ---
 
 An incredibly easy, organized self-study companion — modern bullet points, charts, and crisp language make this a phenomenal choice for the independent student.

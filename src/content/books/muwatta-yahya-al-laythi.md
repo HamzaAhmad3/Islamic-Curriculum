@@ -5,6 +5,7 @@ science: "hadith"
 type: "riwayah"
 level: "intermediate"
 tags: ["hadith", "riwayah"]
+pdfUrl: "https://files.turath.io/pdf/archive/memmem_=_mem2-5.pdf#pdfjs.action=download"
 ---
 
 The most widely circulated riwayah of Imam Malik's al-Muwatta, and the standard reference edition used across most of the Muslim world today.

@@ -7,6 +7,7 @@ parent: "matn-abi-shuja"
 author: "Taqi al-Din al-Hisni"
 level: "intermediate"
 tags: ["shafii", "sharh", "evidences"]
+pdfUrl: "https://feqhup.com/uploads/1374266879221.pdf"
 ---
 
 Widely regarded as the best commentary for a student who wants to know *why* a ruling exists.
