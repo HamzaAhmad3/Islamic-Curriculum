@@ -203,10 +203,29 @@ const dashboard = defineCollection({
     teacher: z.string().optional(),
     progress: z.string().optional(),       // e.g. "page 93", "episode 12.5"
     dateNote: z.string().optional(),       // e.g. "17th January 2026"
+    url: z.string().url().optional(),      // link to the class recording/playlist, when applicable
     note: z.string().optional(),           // extra detail shown under the title, e.g. "would like the Dar Ibn Hazm edition"
-    priority: z.number().optional(),       // lower = more important; used to order the to-buy list
     rare: z.boolean().default(false),
     addedAt: z.date().optional(),
+  }),
+});
+
+/**
+ * WISHLIST-ORDER collection — a single file holding the entire To Buy reading
+ * order as one array. Deliberately NOT stored per-item (that was the old
+ * `priority: N` field, removed above) because a per-item integer means
+ * inserting one new book requires renumbering every book after it.
+ *
+ * Reordering the To Buy list is now: open this one file, cut/paste lines.
+ * Adding a book: create its dashboard/*.yaml entry as usual (no ordering
+ * data needed there) — if its id isn't listed here, it just appends to the
+ * end automatically, so touching this file is only necessary when you care
+ * about a *specific* position.
+ */
+const wishlistOrder = defineCollection({
+  type: "data",
+  schema: z.object({
+    order: z.array(z.string()), // dashboard entry ids (filenames without .yaml), most wanted first
   }),
 });
 
@@ -224,4 +243,4 @@ const notes = defineCollection({
   }),
 });
 
-export const collections = { books, sciences, pathways, guides, dashboard, scholars, notes };
+export const collections = { books, sciences, pathways, guides, dashboard, scholars, notes, wishlistOrder };
