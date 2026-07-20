@@ -5,6 +5,10 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 const entries = await getCollection("dashboard");
 const base = import.meta.env.BASE_URL;
 
+const wishlistOrderEntry = await getEntry("wishlistOrder", "order");
+const orderList = wishlistOrderEntry?.data.order ?? [];
+const orderIndex = new Map(orderList.map((id, i) => [id, i]));
+
 const notesRaw = await getCollection("notes");
 const notes = notesRaw.sort((a, b) => {
   if (a.data.pinned !== b.data.pinned) return a.data.pinned ? -1 : 1;
@@ -29,7 +33,12 @@ const grouped = {
   memorizing: resolved.filter((e) => e.data.status === "memorizing"),
   toBuy: resolved
     .filter((e) => e.data.status === "to-buy")
-    .sort((a, b) => (a.data.priority ?? 999) - (b.data.priority ?? 999)),
+    .sort((a, b) => {
+      const ia = orderIndex.get(a.id) ?? Infinity;
+      const ib = orderIndex.get(b.id) ?? Infinity;
+      if (ia !== ib) return ia - ib;
+      return a.id.localeCompare(b.id); // stable fallback for anything not listed in the order file
+    }),
 };
 
 function displayTitle(e: (typeof resolved)[number]) {
@@ -64,6 +73,7 @@ const toBuySciences = [
 
   {notes.length > 0 && (
     <section class="notes-panel">
+      <p class="notes-panel__label ui-text">Notes from the curator</p>
       <div class="notes-panel__inner">
         {notes.map((note, i) => {
           const { Content } = renderedNotes[i];
@@ -115,6 +125,11 @@ const toBuySciences = [
                 {e.data.teacher && <span>{e.data.teacher}</span>}
                 {e.data.progress && <span>{e.data.progress}</span>}
                 {e.data.dateNote && <span>{e.data.dateNote}</span>}
+                {e.data.url && (
+                  <a href={e.data.url} class="dash-item__watch" target="_blank" rel="noopener noreferrer">
+                    Watch class →
+                  </a>
+                )}
               </div>
             </li>
           ))}
@@ -233,15 +248,23 @@ const toBuySciences = [
     .notes-panel {
       max-width: 78rem;
       margin: 0 auto;
-      padding: var(--space-10) var(--space-6) var(--space-10);
+      padding: var(--space-6) var(--space-6) var(--space-10);
+    }
+    .notes-panel__label {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin: 0 0 var(--space-5);
     }
     .notes-panel__inner {
       display: flex;
       flex-direction: column;
-      gap: var(--space-4);
+      gap: var(--space-5);
     }
     .note {
-      padding: var(--space-6);
+      padding: var(--space-8);
       background: var(--color-surface);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
@@ -255,7 +278,7 @@ const toBuySciences = [
       align-items: center;
       flex-wrap: wrap;
       gap: var(--space-3);
-      margin-bottom: var(--space-3);
+      margin-bottom: var(--space-5);
     }
     .note__pin { color: var(--color-accent); display: flex; }
     .note__title {
@@ -271,19 +294,10 @@ const toBuySciences = [
     .note__body :global(p) {
       font-size: var(--text-base);
       color: var(--color-text-soft);
-      line-height: 1.7;
-      margin: 0 0 var(--space-3);
+      line-height: 1.75;
+      margin: 0 0 var(--space-4);
     }
     .note__body :global(p:last-child) { margin-bottom: 0; }
-
-    .note__body :global(a) {
-  color: var(--color-accent); /* Makes it your theme's accent color */
-  text-decoration: underline;  /* Adds an underline so it screams "click me" */
-}
-.note__body :global(a:hover) {
-  filter: brightness(1.2);    /* Makes it light up slightly when hovered */
-}
-
 
     .dashboard-grid {
       max-width: 78rem;
@@ -339,6 +353,11 @@ const toBuySciences = [
       color: var(--color-muted);
       margin-top: var(--space-2);
     }
+    .dash-item__watch {
+      color: var(--color-accent);
+      font-weight: 600;
+    }
+    .dash-item__watch:hover { text-decoration: underline; }
 
     .empty { color: var(--color-muted); font-size: var(--text-sm); font-style: italic; margin: 0; text-align: center; padding: var(--space-4) 0; }
 
@@ -421,6 +440,8 @@ const toBuySciences = [
     @media (max-width: 560px) {
       .page-header { padding-top: var(--space-8); }
       .page-header h1 { font-size: var(--text-3xl); }
+      .notes-panel { padding-top: var(--space-4); }
+      .note { padding: var(--space-5); }
       .dash-panel { padding: var(--space-6); }
       .buy-row { flex-wrap: wrap; }
       .buy-row__rare { margin-left: 1.75rem; }
